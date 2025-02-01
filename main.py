@@ -50,7 +50,7 @@ def login():
     input_json = request.get_json(force = True)
     login = input_json['login']
     password = input_json['password']
-    connection = sqlite3.connect(config.usersbd)
+    connection = sqlite3.connect(config.usersdb)
     cursor = connection.cursor()
 
     cursor.execute('SELECT id, username, password FROM Users WHERE username = ?', (login,))
@@ -58,7 +58,7 @@ def login():
     print(results)
     if results:
         print(results)
-        if login == results[0][1] and password_hash == results[0][2]:
+        if login == results[0][1] and password == results[0][2]:
             return {"success": "true", "username": login, "id": results[0][0]}
     elif not results:
         return {"success": "false", "cause": "login or password incorrect."}
@@ -77,7 +77,7 @@ def create_task():
     cursor.execute('SELECT id, username, text, timestamp, is_done FROM Notes WHERE username = ? and timestamp = ?', (auth.current_user(), now,))
     results = cursor.fetchall()
     connection.close()
-    return {"success": "true", "text": results[0][2], "username": results[0][1], "timestamp": results[0][3], "is_done": results[0][4]}
+    return {"success": "true", "text": results[0][2], "username": results[0][1], "timestamp": results[0][3], "is_done": results[0][4], "id": results[0][0]}
 
 @app.route('/edit_task/<string:task_id>', methods=['PUT'])
 @auth.login_required
@@ -97,7 +97,7 @@ def edit_task(task_id):
             return {"success": "true", "id": results1[0][0], "username": results1[0][1], "text": results1[0][2], "timestamp": results1[0][3], "is_done": results1[0][4]}
         else:
             connection.close()
-            return {"success": "false"}
+            return {"success": "false", "cause": "this task was made by other person."}
     except IndexError:
         return {"success": "false", "cause": "task not exist"}
     
@@ -115,7 +115,7 @@ def delete_task(task_id):
             return {"success": "true"}
         else:
             connection.close()
-            return {"success": "false"}
+            return {"success": "false", "cause": "this task was made by other person."}
     except IndexError:
         return {"success": "false", "cause": "task not exist"}
 
@@ -180,7 +180,7 @@ def task_done(task_id):
                 return {"success": "true", "id": results1[0][0], "username": results1[0][1], "text": results1[0][2], "timestamp": results1[0][3], "is_done": results1[0][4]}
         else:
             connection.close()
-            return {"success": "false"}
+            return {"success": "false", "cause": "this task was made by other person."}
     except IndexError:
         return {"success": "false", "cause": "task not exist"}
 
